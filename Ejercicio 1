@@ -1,0 +1,129 @@
+# ============================================================
+# REGRESIÓN LINEAL: INVERSIÓN Y GANANCIA
+# ============================================================
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score, mean_squared_error
+
+# 1. DATOS DEL PROBLEMA
+# X: inversión en dólares
+# y: ganancia o retorno asociado en dólares
+
+X = np.array([1000, 1500, 2000, 2500, 3000, 3500, 4000]).reshape(-1, 1)
+y = np.array([5000, 6500, 7500, 9000, 10500, 12000, 13500])
+
+# 2. CREAR Y AJUSTAR EL MODELO
+modelo = LinearRegression()
+modelo.fit(X, y)
+
+# 3. OBTENER LOS PARÁMETROS DEL MODELO
+pendiente = modelo.coef_[0]
+intercepto = modelo.intercept_
+
+print("=" * 55)
+print("RESULTADOS DE LA REGRESIÓN LINEAL")
+print("=" * 55)
+
+print(f"Pendiente: {pendiente:.4f}")
+print(f"Intercepto: {intercepto:.4f}")
+
+print("\nEcuación de regresión:")
+print(f"y = {pendiente:.4f}x + ({intercepto:.4f})")
+
+# 4. CALCULAR EL COEFICIENTE DE DETERMINACIÓN R²
+y_pred = modelo.predict(X)
+r2 = r2_score(y, y_pred)
+
+print(f"\nCoeficiente de determinación R²: {r2:.4f}")
+print(f"Porcentaje de variación explicada: {r2 * 100:.2f}%")
+
+# 5. CALCULAR EL ERROR CUADRÁTICO MEDIO
+mse = mean_squared_error(y, y_pred)
+rmse = np.sqrt(mse)
+
+print(f"Error cuadrático medio (MSE): {mse:.2f}")
+print(f"Raíz del error cuadrático medio (RMSE): {rmse:.2f}")
+
+# 6. PREDECIR PARA UNA INVERSIÓN DE 4500 DÓLARES
+inversion_nueva = np.array([[4500]])
+prediccion = modelo.predict(inversion_nueva)[0]
+
+print("\n" + "=" * 55)
+print("PREDICCIÓN PARA UNA INVERSIÓN DE $4500")
+print("=" * 55)
+print(f"Inversión: ${inversion_nueva[0, 0]:,.2f}")
+print(f"Valor estimado de y: ${prediccion:,.2f}")
+
+# 7. INTERPRETACIÓN AUTOMÁTICA DE R²
+print("\nINTERPRETACIÓN DEL MODELO:")
+
+if r2 >= 0.90:
+    print("El modelo presenta un ajuste lineal muy alto.")
+elif r2 >= 0.70:
+    print("El modelo presenta un ajuste lineal alto.")
+elif r2 >= 0.50:
+    print("El modelo presenta un ajuste lineal moderado.")
+else:
+    print("El modelo presenta un ajuste lineal bajo.")
+
+print(
+    f"El modelo explica aproximadamente el {r2 * 100:.2f}% "
+    "de la variabilidad observada en los datos."
+)
+
+# 8. GENERAR PUNTOS PARA LA RECTA DE REGRESIÓN
+X_recta = np.linspace(
+    X.min(), inversion_nueva[0, 0], 200
+).reshape(-1, 1)
+
+y_recta = modelo.predict(X_recta)
+
+# 9. GRAFICAR LA DISPERSIÓN Y LA RECTA DE REGRESIÓN
+plt.figure(figsize=(10, 6))
+
+plt.scatter(
+    X, y,
+    color="royalblue",
+    s=80,
+    label="Datos observados"
+)
+
+plt.plot(
+    X_recta, y_recta,
+    color="red",
+    linewidth=2,
+    label="Recta de regresión"
+)
+
+plt.scatter(
+    inversion_nueva, prediccion,
+    color="green",
+    marker="*",
+    s=250,
+    label=f"Predicción para $4500: ${prediccion:,.2f}"
+)
+
+plt.axvline(
+    x=4500,
+    color="gray",
+    linestyle="--",
+    alpha=0.7
+)
+
+plt.annotate(
+    f"({4500}, {prediccion:.2f})",
+    xy=(4500, prediccion),
+    xytext=(-145, -25),
+    textcoords="offset points",
+    arrowprops=dict(arrowstyle="->")
+)
+
+plt.title("Regresión lineal: inversión y valor asociado")
+plt.xlabel("Inversión (dólares)")
+plt.ylabel("Valor de y (dólares)")
+plt.grid(True, linestyle="--", alpha=0.4)
+plt.legend()
+plt.tight_layout()
+plt.show()
