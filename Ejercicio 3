@@ -1,0 +1,218 @@
+# ============================================================
+# EJERCICIO 3: CLASIFICACION DE CLIENTES CON KNN
+# ============================================================
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import (
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+    accuracy_score,
+    classification_report
+)
+
+# 1. DATOS ORIGINALES
+# X: edad y salario
+# y: 0 = No compra, 1 = Si compra
+
+X = np.array([
+    [22, 1200],
+    [25, 1500],
+    [28, 1800],
+    [35, 2500],
+    [40, 3000],
+    [45, 3500],
+    [50, 4000],
+    [30, 2000]
+])
+
+y = np.array([0, 0, 0, 1, 1, 1, 1, 0])
+
+nombres_categorias = ["No compra", "Si compra"]
+
+# 2. DIVIDIR LOS DATOS PARA EVALUAR EL MODELO
+# Se reserva el 25% para prueba.
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.25,
+    random_state=42,
+    stratify=y
+)
+
+# 3. ESTANDARIZAR LOS DATOS
+# El escalador se ajusta solo con los datos de entrenamiento.
+
+scaler_eval = StandardScaler()
+
+X_train_scaled = scaler_eval.fit_transform(X_train)
+X_test_scaled = scaler_eval.transform(X_test)
+
+# 4. ENTRENAR EL MODELO KNN CON 3 VECINOS
+
+modelo_eval = KNeighborsClassifier(n_neighbors=3)
+modelo_eval.fit(X_train_scaled, y_train)
+
+# 5. EVALUAR EL MODELO CON LOS DATOS DE PRUEBA
+
+y_pred = modelo_eval.predict(X_test_scaled)
+
+matriz = confusion_matrix(
+    y_test, y_pred, labels=[0, 1]
+)
+
+exactitud = accuracy_score(y_test, y_pred)
+
+print("=" * 55)
+print("EVALUACION DEL MODELO KNN")
+print("=" * 55)
+
+print("\nMatriz de confusion:")
+print(matriz)
+
+print(f"\nExactitud del modelo: {exactitud * 100:.2f}%")
+
+print("\nReporte de clasificacion:")
+print(classification_report(
+    y_test,
+    y_pred,
+    labels=[0, 1],
+    target_names=nombres_categorias,
+    zero_division=0
+))
+
+# 6. GRAFICAR LA MATRIZ DE CONFUSION
+
+disp = ConfusionMatrixDisplay(
+    confusion_matrix=matriz,
+    display_labels=nombres_categorias
+)
+
+disp.plot(cmap="Blues", values_format="d")
+plt.title("Matriz de confusion - Modelo KNN")
+plt.tight_layout()
+plt.show()
+
+# 7. GRAFICO DE DISTRIBUCION DE CLIENTES POR CATEGORIA
+
+no_compra = y == 0
+si_compra = y == 1
+
+plt.figure(figsize=(10, 6))
+
+plt.scatter(
+    X[no_compra, 0],
+    X[no_compra, 1],
+    color="red",
+    s=100,
+    label="No compra (0)"
+)
+
+plt.scatter(
+    X[si_compra, 0],
+    X[si_compra, 1],
+    color="blue",
+    s=100,
+    label="Si compra (1)"
+)
+
+plt.title("Distribucion de clientes por edad y salario")
+plt.xlabel("Edad (años)")
+plt.ylabel("Salario")
+plt.legend()
+plt.grid(True, linestyle="--", alpha=0.4)
+plt.tight_layout()
+plt.show()
+
+# 8. GRAFICO DE CANTIDAD DE CLIENTES POR CATEGORIA
+
+cantidad_no = np.sum(y == 0)
+cantidad_si = np.sum(y == 1)
+
+plt.figure(figsize=(8, 5))
+
+barras = plt.bar(
+    ["No compra", "Si compra"],
+    [cantidad_no, cantidad_si],
+    color=["red", "blue"],
+    width=0.55
+)
+
+plt.bar_label(barras, padding=3)
+plt.title("Cantidad de clientes por categoria")
+plt.xlabel("Categoria")
+plt.ylabel("Numero de clientes")
+plt.grid(axis="y", linestyle="--", alpha=0.4)
+plt.tight_layout()
+plt.show()
+
+# 9. ENTRENAR EL MODELO FINAL CON TODOS LOS DATOS
+# Se usa todo el conjunto para realizar la prediccion solicitada.
+
+scaler_final = StandardScaler()
+X_scaled = scaler_final.fit_transform(X)
+
+modelo_final = KNeighborsClassifier(n_neighbors=3)
+modelo_final.fit(X_scaled, y)
+
+# 10. PREDECIR PARA EL CLIENTE NUEVO
+
+cliente_nuevo = np.array([[38, 2800]])
+
+cliente_scaled = scaler_final.transform(cliente_nuevo)
+
+prediccion = modelo_final.predict(cliente_scaled)[0]
+probabilidades = modelo_final.predict_proba(cliente_scaled)[0]
+
+print("\n" + "=" * 55)
+print("PREDICCION DEL NUEVO CLIENTE")
+print("=" * 55)
+
+print(f"Edad: {cliente_nuevo[0, 0]} años")
+print(f"Salario: {cliente_nuevo[0, 1]:.2f}")
+
+if prediccion == 1:
+    print("\nRESULTADO: EL CLIENTE SI COMPRARA")
+else:
+    print("\nRESULTADO: EL CLIENTE NO COMPRARA")
+
+print(f"Clase predicha: {prediccion}")
+print(f"Probabilidad estimada de no compra: {probabilidades[0]*100:.2f}%")
+print(f"Probabilidad estimada de compra: {probabilidades[1]*100:.2f}%")
+
+# 11. MOSTRAR AL CLIENTE NUEVO EN EL GRAFICO
+
+plt.figure(figsize=(10, 6))
+
+plt.scatter(
+    X[no_compra, 0], X[no_compra, 1],
+    color="red", s=100, label="No compra"
+)
+
+plt.scatter(
+    X[si_compra, 0], X[si_compra, 1],
+    color="blue", s=100, label="Si compra"
+)
+
+color_nuevo = "blue" if prediccion == 1 else "red"
+
+plt.scatter(
+    [38], [2800],
+    color=color_nuevo,
+    edgecolor="black",
+    marker="*",
+    s=300,
+    label=f"Cliente nuevo: {nombres_categorias[prediccion]}"
+)
+
+plt.title("Clasificacion del cliente nuevo mediante KNN")
+plt.xlabel("Edad (años)")
+plt.ylabel("Salario")
+plt.legend()
+plt.grid(True, linestyle="--", alpha=0.4)
+plt.tight_layout()
+plt.show()
