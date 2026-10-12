@@ -1,0 +1,177 @@
+# ==============================================================
+# EJERCICIO 2: REGRESION POLINOMIAL PARA PRONOSTICO DE PRODUCCION
+# ==============================================================
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score, mean_squared_error
+
+# 1. DATOS ORIGINALES
+# X representa el año
+# y representa la producción de la máquina
+
+X = np.array([1, 2, 3, 4, 5, 6]).reshape(-1, 1)
+y = np.array([5, 9, 15, 23, 33, 45])
+
+# 2. CREAR Y ENTRENAR EL MODELO LINEAL
+modelo_lineal = LinearRegression()
+modelo_lineal.fit(X, y)
+
+# 3. CREAR Y ENTRENAR EL MODELO POLINOMIAL DE GRADO 2
+modelo_polinomial = make_pipeline(
+    PolynomialFeatures(degree=2),
+    LinearRegression()
+)
+
+modelo_polinomial.fit(X, y)
+
+# 4. CALCULAR LAS PREDICCIONES PARA LOS DATOS ORIGINALES
+y_lineal = modelo_lineal.predict(X)
+y_polinomial = modelo_polinomial.predict(X)
+
+# 5. CALCULAR LAS METRICAS DE EVALUACION
+r2_lineal = r2_score(y, y_lineal)
+r2_polinomial = r2_score(y, y_polinomial)
+
+rmse_lineal = np.sqrt(mean_squared_error(y, y_lineal))
+rmse_polinomial = np.sqrt(mean_squared_error(y, y_polinomial))
+
+# 6. MOSTRAR LAS ECUACIONES DE LOS MODELOS
+pendiente = modelo_lineal.coef_[0]
+intercepto_lineal = modelo_lineal.intercept_
+
+regresion_cuadratica = modelo_polinomial.named_steps[
+    "linearregression"
+]
+
+coeficientes = regresion_cuadratica.coef_
+intercepto_polinomial = regresion_cuadratica.intercept_
+
+print("=" * 65)
+print("RESULTADOS DE LOS MODELOS DE REGRESION")
+print("=" * 65)
+
+print("\nMODELO LINEAL")
+print(f"Ecuacion: y = {pendiente:.4f}x + {intercepto_lineal:.4f}")
+print(f"R²: {r2_lineal:.4f} ({r2_lineal * 100:.2f}%)")
+print(f"RMSE: {rmse_lineal:.4f}")
+
+print("\nMODELO POLINOMIAL DE GRADO 2")
+print(
+    f"Ecuacion: y = {coeficientes[2]:.4f}x² "
+    f"+ ({coeficientes[1]:.4f})x "
+    f"+ ({intercepto_polinomial:.4f})"
+)
+print(f"R²: {r2_polinomial:.4f} ({r2_polinomial * 100:.2f}%)")
+print(f"RMSE: {rmse_polinomial:.4f}")
+
+# 7. PREDICCION PARA EL AÑO 7
+anio_nuevo = np.array([[7]])
+
+prediccion_lineal = modelo_lineal.predict(anio_nuevo)[0]
+prediccion_polinomial = modelo_polinomial.predict(anio_nuevo)[0]
+
+print("\n" + "=" * 65)
+print("PRONOSTICO DE PRODUCCION PARA EL AÑO 7")
+print("=" * 65)
+
+print(f"Prediccion lineal: {prediccion_lineal:.2f}")
+print(f"Prediccion polinomial: {prediccion_polinomial:.2f}")
+
+diferencia = prediccion_polinomial - prediccion_lineal
+print(f"Diferencia entre predicciones: {diferencia:.2f}")
+
+# 8. INTERPRETACION AUTOMATICA
+print("\nINTERPRETACION")
+
+if r2_polinomial > r2_lineal:
+    print("El modelo polinomial tiene mayor R² en los datos observados.")
+elif r2_polinomial < r2_lineal:
+    print("El modelo lineal tiene mayor R² en los datos observados.")
+else:
+    print("Ambos modelos tienen el mismo R² en los datos observados.")
+
+if rmse_polinomial < rmse_lineal:
+    print("El modelo polinomial presenta menor error dentro de la muestra.")
+elif rmse_polinomial > rmse_lineal:
+    print("El modelo lineal presenta menor error dentro de la muestra.")
+else:
+    print("Ambos modelos presentan el mismo RMSE.")
+
+# 9. GENERAR PUNTOS SUAVES PARA LAS CURVAS
+X_curva = np.linspace(1, 7, 200).reshape(-1, 1)
+
+curva_lineal = modelo_lineal.predict(X_curva)
+curva_polinomial = modelo_polinomial.predict(X_curva)
+
+# 10. GRAFICO 1: PUNTOS ORIGINALES Y CURVA POLINOMIAL
+plt.figure(figsize=(10, 6))
+
+plt.scatter(
+    X.ravel(), y,
+    color="blue", s=80,
+    label="Produccion observada", zorder=3
+)
+
+plt.plot(
+    X_curva.ravel(), curva_polinomial,
+    color="red", linewidth=2.5,
+    label="Regresion polinomial (grado 2)"
+)
+
+plt.scatter(
+    [7], [prediccion_polinomial],
+    color="green", marker="*", s=220,
+    label=f"Pronostico año 7: {prediccion_polinomial:.2f}",
+    zorder=4
+)
+
+plt.axvline(7, color="gray", linestyle="--", alpha=0.6)
+plt.title("Pronostico de produccion mediante regresion polinomial")
+plt.xlabel("Año")
+plt.ylabel("Produccion")
+plt.xticks(range(1, 8))
+plt.grid(True, linestyle="--", alpha=0.4)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# 11. GRAFICO 2: COMPARACION ENTRE MODELO LINEAL Y POLINOMIAL
+plt.figure(figsize=(10, 6))
+
+plt.scatter(
+    X.ravel(), y,
+    color="black", s=80,
+    label="Datos originales", zorder=3
+)
+
+plt.plot(
+    X_curva.ravel(), curva_lineal,
+    color="blue", linewidth=2,
+    label=f"Lineal (R² = {r2_lineal:.4f})"
+)
+
+plt.plot(
+    X_curva.ravel(), curva_polinomial,
+    color="red", linewidth=2.5,
+    label=f"Polinomial (R² = {r2_polinomial:.4f})"
+)
+
+plt.scatter(
+    [7, 7],
+    [prediccion_lineal, prediccion_polinomial],
+    color=["blue", "red"], s=100, zorder=4
+)
+
+plt.title("Comparacion de regresion lineal y polinomial")
+plt.xlabel("Año")
+plt.ylabel("Produccion")
+plt.xticks(range(1, 8))
+plt.grid(True, linestyle="--", alpha=0.4)
+plt.legend()
+plt.tight_layout()
+plt.show()
